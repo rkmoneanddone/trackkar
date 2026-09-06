@@ -1,0 +1,39 @@
+# Dependencies
+node_modules/
+
+# React Native / Metro
+.metro-health-check*
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+
+# Android generated files
+android/.gradle/
+android/build/
+android/app/build/
+android/.cxx/
+android/app/.cxx/
+*.apk
+*.aab
+local.properties
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Build output
+dist/
+build/
+coverage/
+
+# Temporary files
+*.tmp
+*.temp
