@@ -21,6 +21,7 @@ import {TextField} from '../../../components/TextField';
 import {AppButton} from '../../../components/AppButton';
 import {colors, radius} from '../../../theme/tokens';
 import {firebaseAuth} from '../firebaseAuth';
+import {createOrUpdateAccountProfile} from '../../account/profileRepository';
 
 type Props = NativeStackScreenProps<
   RootStackParamList,
@@ -255,13 +256,41 @@ export function MobileVerificationScreen({route, navigation}: Props) {
     }
   };
 
-  const continueIntoApp = () => {
+  const continueIntoApp = async () => {
     const user = firebaseAuth.currentUser;
 
-    if (!user?.phoneNumber && !verifiedNumber) {
+    if (!user) {
+      Alert.alert(
+        'Google session missing',
+        'Please sign in with Google again before continuing.',
+      );
+      return;
+    }
+
+    const confirmedPhoneNumber = user.phoneNumber || verifiedNumber;
+
+    if (!confirmedPhoneNumber) {
       Alert.alert(
         'Verification required',
         'Verify your mobile number before continuing.',
+      );
+      return;
+    }
+
+    try {
+      await createOrUpdateAccountProfile({
+        uid: user.uid,
+        email: user.email,
+        displayName: route.params.name.trim(),
+        otherName: route.params.otherName?.trim() || null,
+        phoneNumber: confirmedPhoneNumber,
+        role: route.params.role,
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      Alert.alert(
+        'Could not save profile',
+        message || 'TrackKar could not save your account profile.',
       );
       return;
     }
