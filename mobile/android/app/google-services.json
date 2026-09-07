@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "639728341171",
+    "project_id": "trackkar-b89dd",
+    "storage_bucket": "trackkar-b89dd.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:639728341171:android:e5a6abb7b1527817af20c6",
+        "android_client_info": {
+          "package_name": "com.trackkar.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "639728341171-f86bm7lsfufasdfrj2rlqf2ihpu8njrl.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.trackkar.app",
+            "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
+          }
+        },
+        {
+          "client_id": "639728341171-8miuj88fi35il1g6i7vm1530qpanaebg.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA5fD6YmRqZ0jAkSs-0nxJdv_Gde1OBfAM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "639728341171-8miuj88fi35il1g6i7vm1530qpanaebg.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

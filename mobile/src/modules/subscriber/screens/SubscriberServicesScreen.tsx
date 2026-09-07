@@ -1,0 +1,2 @@
+﻿import React from 'react'; import {Screen} from '../../../components/Screen'; import {SectionCard} from '../../../components/SectionCard';
+export function SubscriberServicesScreen(){return <Screen><SectionCard title="Discover services" subtitle="Find a provider, vehicle and exact route before subscribing."/><SectionCard title="Service types" subtitle="Service categories are configuration, not hard-coded application logic."/></Screen>}

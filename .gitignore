@@ -37,3 +37,14 @@ coverage/
 # Temporary files
 *.tmp
 *.temp
+
+# Local TrackKar backups
+mobile/_foundation_backup_*/
+
+# Local TrackKar development backups
+mobile/_trackkar_backup_*/
+
+# Local TrackKar UI backups
+mobile/_trackkar_ui_backup_*/
+
+mobile/_trackkar_step4_backup_*/

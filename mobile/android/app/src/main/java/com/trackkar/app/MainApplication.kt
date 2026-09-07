@@ -1,4 +1,4 @@
-package com.garbagecollectionmobile
+package com.trackkar.app
 
 import android.app.Application
 import com.facebook.react.PackageList
