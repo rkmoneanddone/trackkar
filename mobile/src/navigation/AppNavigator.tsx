@@ -7,6 +7,7 @@ import {WelcomeScreen} from '../modules/onboarding/screens/WelcomeScreen';
 import {RegisterAsScreen} from '../modules/onboarding/screens/RegisterAsScreen';
 import {OperatorModeScreen} from '../modules/onboarding/screens/OperatorModeScreen';
 import {RegisterScreen} from '../modules/auth/screens/RegisterScreen';
+import {MobileVerificationScreen} from '../modules/auth/screens/MobileVerificationScreen';
 import {OperatorNavigator} from './OperatorNavigator';
 import {DriverNavigator} from './DriverNavigator';
 import {SubscriberNavigator} from './SubscriberNavigator';
@@ -27,6 +28,10 @@ export function AppNavigator() {
         <Stack.Screen name="RegisterAs" component={RegisterAsScreen} />
         <Stack.Screen name="OperatorMode" component={OperatorModeScreen} />
         <Stack.Screen name="Register" component={RegisterScreen} />
+        <Stack.Screen
+          name="MobileVerification"
+          component={MobileVerificationScreen}
+        />
         <Stack.Screen name="OperatorApp" component={OperatorNavigator} />
         <Stack.Screen name="DriverApp" component={DriverNavigator} />
         <Stack.Screen name="SubscriberApp" component={SubscriberNavigator} />

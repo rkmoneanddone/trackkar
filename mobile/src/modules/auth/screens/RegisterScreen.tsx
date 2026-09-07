@@ -100,10 +100,12 @@ export function RegisterScreen({route, navigation}: Props) {
       return;
     }
 
-    Alert.alert(
-      'Mobile verification next',
-      'Google login is connected. The next TrackKar step will verify this mobile number by OTP before the profile is created.',
-    );
+    navigation.navigate('MobileVerification', {
+      role: route.params.role,
+      name: name.trim(),
+      otherName: otherName.trim(),
+      mobile,
+    });
   };
 
   return (
