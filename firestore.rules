@@ -11,9 +11,6 @@ service cloud.firestore {
       return signedIn() && request.auth.uid == uid;
     }
 
-    // Public-facing account/profile data for the authenticated account itself.
-    // Broader provider/driver/subscriber visibility will be added deliberately
-    // when those modules are implemented.
     match /accounts/{uid} {
       allow read: if isOwner(uid);
 
@@ -24,13 +21,11 @@ service cloud.firestore {
       allow update: if isOwner(uid)
         && resource.data.uid == request.auth.uid
         && request.resource.data.uid == request.auth.uid
-        // Client cannot self-promote a suspended account.
         && request.resource.data.status == resource.data.status;
 
       allow delete: if false;
     }
 
-    // Private contact data: only the owning authenticated account.
     match /accountPrivate/{uid} {
       allow read: if isOwner(uid);
 
@@ -44,7 +39,30 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // Default deny. New TrackKar modules get explicit rules as we build them.
+    match /vehicles/{vehicleId} {
+      allow create: if signedIn()
+        && request.resource.data.ownerAccountId == request.auth.uid;
+
+      allow read: if signedIn()
+        && resource.data.ownerAccountId == request.auth.uid;
+
+      allow update: if signedIn()
+        && resource.data.ownerAccountId == request.auth.uid
+        && request.resource.data.ownerAccountId == request.auth.uid;
+
+      allow delete: if false;
+    }
+
+    match /vehicleVersions/{versionId} {
+      allow create: if signedIn()
+        && request.resource.data.ownerAccountId == request.auth.uid;
+
+      allow read: if signedIn()
+        && resource.data.ownerAccountId == request.auth.uid;
+
+      allow update, delete: if false;
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }
