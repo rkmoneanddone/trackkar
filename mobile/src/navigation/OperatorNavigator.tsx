@@ -2,9 +2,9 @@ import React from 'react';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import {BusFront, Home, Route, UserRound} from 'lucide-react-native';
 import {OperatorHomeScreen} from '../modules/operator/screens/OperatorHomeScreen';
-import {RoutesScreen} from '../modules/operator/screens/RoutesScreen';
 import {AccountScreen} from '../modules/account/screens/AccountScreen';
 import {VehicleStackNavigator} from './VehicleStackNavigator';
+import {RouteStackNavigator} from './RouteStackNavigator';
 import {colors} from '../theme/tokens';
 
 export type OperatorTabParamList = {
@@ -44,7 +44,7 @@ export function OperatorNavigator() {
 
       <Tab.Screen
         name="Routes"
-        component={RoutesScreen}
+        component={RouteStackNavigator}
         options={{
           tabBarIcon: ({color}) => <Route size={21} color={color} />,
         }}

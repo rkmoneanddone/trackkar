@@ -13,11 +13,13 @@ import {BrandHeader} from '../../../components/BrandHeader';
 import {AppButton} from '../../../components/AppButton';
 import {colors, radius} from '../../../theme/tokens';
 import {listMyVehicles} from '../../vehicle/vehicleRepository';
+import {listMyRoutes} from '../../route/routeRepository';
 
 export function OperatorHomeScreen() {
   const navigation = useNavigation<any>();
   const [vehicleCount, setVehicleCount] = useState(0);
   const [vehicleLoadError, setVehicleLoadError] = useState(false);
+  const [routeCount, setRouteCount] = useState(0);
 
   useFocusEffect(
     useCallback(() => {
@@ -34,6 +36,14 @@ export function OperatorHomeScreen() {
           if (active) {
             setVehicleLoadError(true);
           }
+        });
+
+      listMyRoutes()
+        .then(items => {
+          if (active) setRouteCount(items.filter(item => item.status === 'ACTIVE').length);
+        })
+        .catch(() => {
+          if (active) setRouteCount(0);
         });
 
       return () => {
@@ -67,7 +77,7 @@ export function OperatorHomeScreen() {
         />
         <Stat
           icon={<Route size={20} color={colors.primary} />}
-          value="0"
+          value={String(routeCount)}
           label="Active routes"
         />
       </View>
