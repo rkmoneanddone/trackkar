@@ -101,7 +101,9 @@ service cloud.firestore {
         && exists(/databases/$(database)/documents/vehicles/$(request.resource.data.vehicleId))
         && get(/databases/$(database)/documents/vehicles/$(request.resource.data.vehicleId)).data.ownerAccountId == request.auth.uid;
 
-      allow read: if signedIn() && resource.data.ownerAccountId == request.auth.uid;
+      allow read: if signedIn()
+        && (resource.data.ownerAccountId == request.auth.uid
+          || resource.data.status == 'ACTIVE');
       allow update: if signedIn()
         && resource.data.ownerAccountId == request.auth.uid
         && request.resource.data.ownerAccountId == resource.data.ownerAccountId
@@ -153,6 +155,36 @@ service cloud.firestore {
       allow read, delete: if signedIn()
         && resource.data.ownerAccountId == request.auth.uid;
       allow update: if false;
+    }
+
+    match /subscriberLocations/{uid} {
+      allow read: if isOwner(uid);
+      allow create, update: if isOwner(uid)
+        && request.resource.data.accountId == request.auth.uid
+        && request.resource.data.label is string
+        && request.resource.data.label.size() > 0
+        && request.resource.data.label.size() <= 60
+        && request.resource.data.point is map;
+      allow delete: if false;
+    }
+
+    match /routeSubscriptions/{subscriptionId} {
+      allow read: if signedIn()
+        && resource.data.subscriberAccountId == request.auth.uid;
+      allow create: if signedIn()
+        && request.resource.data.id == subscriptionId
+        && request.resource.data.subscriberAccountId == request.auth.uid
+        && request.resource.data.status == 'ACTIVE'
+        && request.resource.data.alertMinutes == [6, 3]
+        && exists(/databases/$(database)/documents/subscriberLocations/$(request.auth.uid))
+        && exists(/databases/$(database)/documents/routes/$(request.resource.data.routeId))
+        && get(/databases/$(database)/documents/routes/$(request.resource.data.routeId)).data.status == 'ACTIVE';
+      allow update: if signedIn()
+        && resource.data.subscriberAccountId == request.auth.uid
+        && request.resource.data.subscriberAccountId == request.auth.uid
+        && request.resource.data.routeId == resource.data.routeId
+        && request.resource.data.status in ['ACTIVE', 'MUTED', 'ENDED'];
+      allow delete: if false;
     }
 
     match /{document=**} {
