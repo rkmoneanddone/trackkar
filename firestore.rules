@@ -102,18 +102,57 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/vehicles/$(request.resource.data.vehicleId)).data.ownerAccountId == request.auth.uid;
 
       allow read: if signedIn() && resource.data.ownerAccountId == request.auth.uid;
-      allow update, delete: if false;
+      allow update: if signedIn()
+        && resource.data.ownerAccountId == request.auth.uid
+        && request.resource.data.ownerAccountId == resource.data.ownerAccountId
+        && request.resource.data.id == resource.data.id
+        && request.resource.data.vehicleId == resource.data.vehicleId
+        && request.resource.data.routeName == resource.data.routeName
+        && request.resource.data.directionType == resource.data.directionType
+        && request.resource.data.creationMethod == resource.data.creationMethod
+        && (
+          (resource.data.status == 'DRAFT'
+            && request.resource.data.status == 'LEARNING'
+            && request.resource.data.learningTripCount == 1)
+          || (resource.data.status == 'LEARNING'
+            && request.resource.data.status == 'LEARNING'
+            && request.resource.data.learningTripCount == resource.data.learningTripCount + 1
+            && request.resource.data.learningTripCount <= 2)
+          || (resource.data.status == 'LEARNING'
+            && request.resource.data.status == 'ACTIVE'
+            && resource.data.learningTripCount == 2
+            && request.resource.data.learningTripCount == 3
+            && request.resource.data.learnedPath is list
+            && request.resource.data.learnedPath.size() == 40)
+        );
+      allow delete: if false;
     }
 
     match /routeVersions/{versionId} {
       allow create: if signedIn()
         && request.resource.data.ownerAccountId == request.auth.uid
         && request.resource.data.routeId is string
-        && request.resource.data.version == 1
-        && request.resource.data.reason == 'ROUTE_CREATED';
+        && ((request.resource.data.version == 1
+            && request.resource.data.reason == 'ROUTE_CREATED')
+          || (request.resource.data.version == 2
+            && request.resource.data.reason == 'LEARNING_FINALIZED'));
 
       allow read: if signedIn() && resource.data.ownerAccountId == request.auth.uid;
       allow update, delete: if false;
+    }
+
+    match /routeLearningTrips/{tripId} {
+      allow create: if signedIn()
+        && request.resource.data.id == tripId
+        && request.resource.data.ownerAccountId == request.auth.uid
+        && request.resource.data.sequence in [1, 2]
+        && request.resource.data.points is list
+        && request.resource.data.points.size() >= 8
+        && exists(/databases/$(database)/documents/routes/$(request.resource.data.routeId))
+        && get(/databases/$(database)/documents/routes/$(request.resource.data.routeId)).data.ownerAccountId == request.auth.uid;
+      allow read, delete: if signedIn()
+        && resource.data.ownerAccountId == request.auth.uid;
+      allow update: if false;
     }
 
     match /{document=**} {

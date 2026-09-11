@@ -3,6 +3,14 @@ import {firebaseApp, firebaseAuth} from '../auth/firebaseAuth';
 import {getMyVehicle} from '../vehicle/vehicleRepository';
 import type {CreateRouteInput, TrackKarRoute} from './routeTypes';
 import {MAX_ACTIVE_ROUTES, validateRouteDirection, validateRouteName} from './routeValidation';
+import {
+  buildLearnedPath,
+  REQUIRED_LEARNING_TRIPS,
+  routeDistanceMeters,
+  tripsMatch,
+  validateLearningTrip,
+} from './routeLearning';
+import type {RouteLearningTrip, RoutePoint} from './routeTypes';
 
 const db = getFirestore(firebaseApp);
 
@@ -52,4 +60,89 @@ export async function createRoute(input: CreateRouteInput) {
   });
   await batch.commit();
   return routeRef.id;
+}
+
+export async function recordCompletedLearningTrip(
+  routeId: string,
+  points: RoutePoint[],
+) {
+  const uid = currentUid();
+  const validationError = validateLearningTrip(points);
+  if (validationError) throw new Error(validationError);
+
+  const routeRef = doc(db, 'routes', routeId);
+  const routeSnapshot = await getDoc(routeRef);
+  if (!routeSnapshot.exists()) throw new Error('This route could not be found.');
+  const route = routeSnapshot.data() as TrackKarRoute;
+  if (route.ownerAccountId !== uid) throw new Error('This route does not belong to your account.');
+  if (route.status !== 'DRAFT' && route.status !== 'LEARNING') {
+    throw new Error('Only a draft or learning route can accept learning trips.');
+  }
+
+  const learningQuery = query(
+    collection(db, 'routeLearningTrips'),
+    where('routeId', '==', routeId),
+    where('ownerAccountId', '==', uid),
+  );
+  const learningSnapshot = await getDocs(learningQuery);
+  const existing = learningSnapshot.docs
+    .map(item => item.data() as RouteLearningTrip)
+    .sort((left, right) => left.sequence - right.sequence);
+  if (existing.length && !tripsMatch(existing[0].points, points)) {
+    throw new Error('This trip does not match the start and end areas of the first learning trip.');
+  }
+  if (existing.length >= REQUIRED_LEARNING_TRIPS - 1) {
+    const learnedPath = buildLearnedPath([...existing.map(item => item.points), points]);
+    const versionRef = doc(collection(db, 'routeVersions'));
+    const batch = writeBatch(db);
+    batch.update(routeRef, {
+      status: 'ACTIVE',
+      learningTripCount: REQUIRED_LEARNING_TRIPS,
+      learnedPath,
+      startPoint: learnedPath[0],
+      endPoint: learnedPath[learnedPath.length - 1],
+      updatedAt: serverTimestamp(),
+    });
+    batch.set(versionRef, {
+      id: versionRef.id,
+      routeId,
+      ownerAccountId: uid,
+      version: 2,
+      reason: 'LEARNING_FINALIZED',
+      snapshot: {
+        status: 'ACTIVE',
+        learningTripCount: REQUIRED_LEARNING_TRIPS,
+        learnedPath,
+      },
+      createdAt: serverTimestamp(),
+    });
+    learningSnapshot.docs.forEach(item => batch.delete(item.ref));
+    await batch.commit();
+    return {finalized: true, learningTripCount: REQUIRED_LEARNING_TRIPS};
+  }
+
+  const tripRef = doc(collection(db, 'routeLearningTrips'));
+  const sequence = existing.length + 1;
+  const durationSeconds = Math.max(
+    0,
+    Math.round((points[points.length - 1].capturedAtMs - points[0].capturedAtMs) / 1000),
+  );
+  const batch = writeBatch(db);
+  batch.set(tripRef, {
+    id: tripRef.id,
+    routeId,
+    ownerAccountId: uid,
+    sequence,
+    points,
+    distanceMeters: Math.round(routeDistanceMeters(points)),
+    durationSeconds,
+    createdAt: serverTimestamp(),
+  });
+  batch.update(routeRef, {
+    status: 'LEARNING',
+    learningTripCount: sequence,
+    updatedAt: serverTimestamp(),
+  });
+  await batch.commit();
+  return {finalized: false, learningTripCount: sequence};
 }
