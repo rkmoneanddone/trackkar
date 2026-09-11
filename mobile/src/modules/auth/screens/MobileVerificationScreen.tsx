@@ -22,6 +22,7 @@ import {AppButton} from '../../../components/AppButton';
 import {colors, radius} from '../../../theme/tokens';
 import {firebaseAuth} from '../firebaseAuth';
 import {createOrUpdateAccountProfile} from '../../account/profileRepository';
+import {ensureProvider} from '../../provider/providerRepository';
 
 type Props = NativeStackScreenProps<
   RootStackParamList,
@@ -278,7 +279,7 @@ export function MobileVerificationScreen({route, navigation}: Props) {
     }
 
     try {
-      await createOrUpdateAccountProfile({
+      const profile = await createOrUpdateAccountProfile({
         uid: user.uid,
         email: user.email,
         displayName: route.params.name.trim(),
@@ -286,6 +287,9 @@ export function MobileVerificationScreen({route, navigation}: Props) {
         phoneNumber: confirmedPhoneNumber,
         role: route.params.role,
       });
+      if (route.params.role === 'OPERATOR' || route.params.role === 'OPERATOR_DRIVER') {
+        await ensureProvider(profile);
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       Alert.alert(

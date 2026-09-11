@@ -10,6 +10,7 @@ export type RouteRun = {
   status: RouteRunStatus;
   latestPoint: RoutePoint;
   latestSpeedMetersPerSecond: number | null;
+  learningPoints?: RoutePoint[];
   startedAt?: unknown;
   endedAt?: unknown;
   autoStopAt?: unknown;

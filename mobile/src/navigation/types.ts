@@ -13,4 +13,5 @@ export type RootStackParamList = {
   OperatorApp: undefined;
   DriverApp: undefined;
   SubscriberApp: undefined;
+  AdminApp: undefined;
 };

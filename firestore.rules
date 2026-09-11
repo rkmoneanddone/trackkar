@@ -11,23 +11,41 @@ service cloud.firestore {
       return signedIn() && request.auth.uid == uid;
     }
 
+    function isAdmin() {
+      return signedIn() && request.auth.token.admin == true;
+    }
+
+    function isProviderMember(providerId) {
+      return signedIn()
+        && exists(/databases/$(database)/documents/providerMembers/$(providerId + '_' + request.auth.uid))
+        && get(/databases/$(database)/documents/providerMembers/$(providerId + '_' + request.auth.uid)).data.status == 'ACTIVE';
+    }
+
     match /accounts/{uid} {
-      allow read: if isOwner(uid);
+      allow read: if isOwner(uid) || isAdmin();
 
       allow create: if isOwner(uid)
         && request.resource.data.uid == request.auth.uid
-        && request.resource.data.status == 'ACTIVE';
+        && request.resource.data.status == 'ACTIVE'
+        && request.resource.data.primaryRole in ['OPERATOR', 'OPERATOR_DRIVER', 'DRIVER', 'SUBSCRIBER']
+        && !request.resource.data.roles.hasAny(['ADMIN']);
 
       allow update: if isOwner(uid)
         && resource.data.uid == request.auth.uid
         && request.resource.data.uid == request.auth.uid
-        && request.resource.data.status == resource.data.status;
+        && request.resource.data.status == resource.data.status
+        && request.resource.data.roles.hasAll(resource.data.roles)
+        && !request.resource.data.roles.hasAny(['ADMIN'])
+        && request.resource.data.primaryRole in request.resource.data.roles
+        && request.resource.data.providerId in [resource.data.providerId, request.auth.uid]
+        && request.resource.data.driverId in [resource.data.driverId, request.auth.uid]
+        && request.resource.data.subscriberId in [resource.data.subscriberId, request.auth.uid];
 
       allow delete: if false;
     }
 
     match /accountPrivate/{uid} {
-      allow read: if isOwner(uid);
+      allow read: if isOwner(uid) || isAdmin();
 
       allow create: if isOwner(uid)
         && request.resource.data.uid == request.auth.uid;
@@ -47,6 +65,7 @@ service cloud.firestore {
         ])
         && request.resource.data.id == vehicleId
         && request.resource.data.ownerAccountId == request.auth.uid
+        && exists(/databases/$(database)/documents/providers/$(request.auth.uid))
         && request.resource.data.displayName is string
         && request.resource.data.displayName.size() > 0
         && request.resource.data.displayName.size() <= 40
@@ -61,7 +80,9 @@ service cloud.firestore {
         && request.resource.data.status == 'ACTIVE';
 
       allow read: if signedIn()
-        && resource.data.ownerAccountId == request.auth.uid;
+        && (resource.data.ownerAccountId == request.auth.uid
+          || resource.data.status == 'ACTIVE'
+          || isAdmin());
 
       // Vehicle edits must use the future versioned/audited update flow.
       allow update, delete: if false;
@@ -75,7 +96,7 @@ service cloud.firestore {
         && request.resource.data.reason == 'VEHICLE_CREATED';
 
       allow read: if signedIn()
-        && resource.data.ownerAccountId == request.auth.uid;
+        && (resource.data.ownerAccountId == request.auth.uid || isAdmin());
 
       allow update, delete: if false;
     }
@@ -103,9 +124,12 @@ service cloud.firestore {
 
       allow read: if signedIn()
         && (resource.data.ownerAccountId == request.auth.uid
-          || resource.data.status == 'ACTIVE');
+          || resource.data.status == 'ACTIVE'
+          || isProviderMember(resource.data.ownerAccountId)
+          || isAdmin());
       allow update: if signedIn()
-        && resource.data.ownerAccountId == request.auth.uid
+        && (resource.data.ownerAccountId == request.auth.uid
+          || isProviderMember(resource.data.ownerAccountId))
         && request.resource.data.ownerAccountId == resource.data.ownerAccountId
         && request.resource.data.id == resource.data.id
         && request.resource.data.vehicleId == resource.data.vehicleId
@@ -132,33 +156,111 @@ service cloud.firestore {
 
     match /routeVersions/{versionId} {
       allow create: if signedIn()
-        && request.resource.data.ownerAccountId == request.auth.uid
+        && (request.resource.data.ownerAccountId == request.auth.uid
+          || isProviderMember(request.resource.data.ownerAccountId))
         && request.resource.data.routeId is string
         && ((request.resource.data.version == 1
             && request.resource.data.reason == 'ROUTE_CREATED')
           || (request.resource.data.version == 2
             && request.resource.data.reason == 'LEARNING_FINALIZED'));
 
-      allow read: if signedIn() && resource.data.ownerAccountId == request.auth.uid;
+      allow read: if signedIn() && (resource.data.ownerAccountId == request.auth.uid || isAdmin());
       allow update, delete: if false;
     }
 
     match /routeLearningTrips/{tripId} {
       allow create: if signedIn()
         && request.resource.data.id == tripId
-        && request.resource.data.ownerAccountId == request.auth.uid
+        && (request.resource.data.ownerAccountId == request.auth.uid
+          || isProviderMember(request.resource.data.ownerAccountId))
+        && request.resource.data.recordedByAccountId == request.auth.uid
         && request.resource.data.sequence in [1, 2]
         && request.resource.data.points is list
         && request.resource.data.points.size() >= 8
         && exists(/databases/$(database)/documents/routes/$(request.resource.data.routeId))
-        && get(/databases/$(database)/documents/routes/$(request.resource.data.routeId)).data.ownerAccountId == request.auth.uid;
+        && get(/databases/$(database)/documents/routes/$(request.resource.data.routeId)).data.ownerAccountId == request.resource.data.ownerAccountId;
       allow read, delete: if signedIn()
-        && resource.data.ownerAccountId == request.auth.uid;
+        && (resource.data.ownerAccountId == request.auth.uid
+          || isProviderMember(resource.data.ownerAccountId));
       allow update: if false;
     }
 
+    match /providers/{providerId} {
+      allow create: if isOwner(providerId)
+        && request.resource.data.id == providerId
+        && request.resource.data.ownerAccountId == request.auth.uid
+        && request.resource.data.status == 'ACTIVE';
+      allow read: if signedIn()
+        && (resource.data.status == 'ACTIVE' || isOwner(providerId) || isProviderMember(providerId) || isAdmin());
+      allow update: if isOwner(providerId)
+        && request.resource.data.id == resource.data.id
+        && request.resource.data.ownerAccountId == resource.data.ownerAccountId;
+      allow delete: if false;
+    }
+
+    match /providerMembers/{memberId} {
+      allow create: if signedIn()
+        && request.resource.data.id == memberId
+        && ((request.resource.data.role == 'OWNER'
+            && request.resource.data.providerId == request.auth.uid
+            && request.resource.data.accountId == request.auth.uid)
+          || (request.resource.data.role == 'DRIVER'
+            && request.resource.data.accountId == request.auth.uid
+            && request.resource.data.inviteId is string
+            && exists(/databases/$(database)/documents/driverInvites/$(request.resource.data.inviteId))
+            && get(/databases/$(database)/documents/driverInvites/$(request.resource.data.inviteId)).data.status == 'OPEN'
+            && get(/databases/$(database)/documents/driverInvites/$(request.resource.data.inviteId)).data.providerId == request.resource.data.providerId));
+      allow read: if signedIn()
+        && (resource.data.accountId == request.auth.uid
+          || resource.data.providerId == request.auth.uid
+          || isAdmin());
+      allow update: if signedIn()
+        && (resource.data.providerId == request.auth.uid || isAdmin())
+        && request.resource.data.id == resource.data.id
+        && request.resource.data.providerId == resource.data.providerId
+        && request.resource.data.accountId == resource.data.accountId;
+      allow delete: if false;
+    }
+
+    match /driverInvites/{inviteId} {
+      allow create: if signedIn()
+        && request.resource.data.providerId == request.auth.uid
+        && request.resource.data.createdByAccountId == request.auth.uid
+        && exists(/databases/$(database)/documents/providers/$(request.auth.uid))
+        && request.resource.data.status == 'OPEN';
+      allow get: if signedIn();
+      allow list: if isAdmin();
+      allow update: if signedIn()
+        && resource.data.status == 'OPEN'
+        && request.resource.data.providerId == resource.data.providerId
+        && request.resource.data.createdByAccountId == resource.data.createdByAccountId
+        && request.resource.data.status == 'ACCEPTED'
+        && request.resource.data.acceptedByAccountId == request.auth.uid;
+      allow delete: if false;
+    }
+
+    match /routeRuns/{runId} {
+      allow create: if signedIn()
+        && request.resource.data.id == runId
+        && request.resource.data.driverAccountId == request.auth.uid
+        && request.resource.data.status == 'ACTIVE'
+        && isProviderMember(request.resource.data.providerId)
+        && exists(/databases/$(database)/documents/routes/$(request.resource.data.routeId));
+      allow read: if signedIn()
+        && (resource.data.driverAccountId == request.auth.uid
+          || resource.data.providerId == request.auth.uid
+          || isAdmin());
+      allow update: if signedIn()
+        && resource.data.driverAccountId == request.auth.uid
+        && request.resource.data.driverAccountId == resource.data.driverAccountId
+        && request.resource.data.routeId == resource.data.routeId
+        && request.resource.data.providerId == resource.data.providerId
+        && request.resource.data.status in ['ACTIVE', 'COMPLETED'];
+      allow delete: if false;
+    }
+
     match /subscriberLocations/{uid} {
-      allow read: if isOwner(uid);
+      allow read: if isOwner(uid) || isAdmin();
       allow create, update: if isOwner(uid)
         && request.resource.data.accountId == request.auth.uid
         && request.resource.data.label is string
@@ -170,7 +272,7 @@ service cloud.firestore {
 
     match /routeSubscriptions/{subscriptionId} {
       allow read: if signedIn()
-        && resource.data.subscriberAccountId == request.auth.uid;
+        && (resource.data.subscriberAccountId == request.auth.uid || isAdmin());
       allow create: if signedIn()
         && request.resource.data.id == subscriptionId
         && request.resource.data.subscriberAccountId == request.auth.uid

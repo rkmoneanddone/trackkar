@@ -1,9 +1,10 @@
 import React from 'react';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
-import {Home, Route} from 'lucide-react-native';
+import {Home, Route, UserRound} from 'lucide-react-native';
 import {DriverHomeScreen} from '../modules/driver/screens/DriverHomeScreen';
 import {DriverRoutesScreen} from '../modules/driver/screens/DriverRoutesScreen';
 import {colors} from '../theme/tokens';
+import {AccountScreen} from '../modules/account/screens/AccountScreen';
 
 const Tab = createBottomTabNavigator();
 
@@ -19,6 +20,7 @@ export function DriverNavigator() {
       }}>
       <Tab.Screen name="Home" component={DriverHomeScreen} options={{tabBarIcon: ({color}) => <Home size={21} color={color} />}} />
       <Tab.Screen name="Routes" component={DriverRoutesScreen} options={{tabBarIcon: ({color}) => <Route size={21} color={color} />}} />
+      <Tab.Screen name="Account" component={AccountScreen} options={{tabBarIcon: ({color}) => <UserRound size={21} color={color} />}} />
     </Tab.Navigator>
   );
 }

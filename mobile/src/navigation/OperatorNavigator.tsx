@@ -1,16 +1,18 @@
 import React from 'react';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
-import {BusFront, Home, Route, UserRound} from 'lucide-react-native';
+import {BusFront, Home, Route, UserRound, UsersRound} from 'lucide-react-native';
 import {OperatorHomeScreen} from '../modules/operator/screens/OperatorHomeScreen';
 import {AccountScreen} from '../modules/account/screens/AccountScreen';
 import {VehicleStackNavigator} from './VehicleStackNavigator';
 import {RouteStackNavigator} from './RouteStackNavigator';
 import {colors} from '../theme/tokens';
+import {TeamScreen} from '../modules/operator/screens/TeamScreen';
 
 export type OperatorTabParamList = {
   Home: undefined;
   Vehicles: undefined;
   Routes: undefined;
+  Team: undefined;
   Account: undefined;
 };
 
@@ -48,6 +50,12 @@ export function OperatorNavigator() {
         options={{
           tabBarIcon: ({color}) => <Route size={21} color={color} />,
         }}
+      />
+
+      <Tab.Screen
+        name="Team"
+        component={TeamScreen}
+        options={{tabBarIcon: ({color}) => <UsersRound size={21} color={color} />}}
       />
 
       <Tab.Screen

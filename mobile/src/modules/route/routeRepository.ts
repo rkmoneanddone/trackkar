@@ -11,6 +11,7 @@ import {
   validateLearningTrip,
 } from './routeLearning';
 import type {RouteLearningTrip, RoutePoint} from './routeTypes';
+import {listMyDriverMemberships} from '../provider/providerRepository';
 
 const db = getFirestore(firebaseApp);
 
@@ -24,6 +25,19 @@ export async function listMyRoutes(): Promise<TrackKarRoute[]> {
   const uid = currentUid();
   const snapshot = await getDocs(query(collection(db, 'routes'), where('ownerAccountId', '==', uid)));
   return snapshot.docs.map(item => item.data() as TrackKarRoute).filter(item => item.status !== 'DELETED').sort((a, b) => a.routeName.localeCompare(b.routeName));
+}
+
+export async function listMyDriverRoutes(): Promise<TrackKarRoute[]> {
+  const memberships = await listMyDriverMemberships();
+  const results = await Promise.all(memberships.map(member => getDocs(query(
+    collection(db, 'routes'), where('ownerAccountId', '==', member.providerId),
+  ))));
+  const byId = new Map<string, TrackKarRoute>();
+  results.forEach(snapshot => snapshot.docs.forEach(item => {
+    const route = item.data() as TrackKarRoute;
+    if (route.status !== 'DELETED' && route.status !== 'INACTIVE') byId.set(route.id, route);
+  }));
+  return [...byId.values()].sort((left, right) => left.routeName.localeCompare(right.routeName));
 }
 
 export async function getMyRoute(routeId: string) {
@@ -74,7 +88,11 @@ export async function recordCompletedLearningTrip(
   const routeSnapshot = await getDoc(routeRef);
   if (!routeSnapshot.exists()) throw new Error('This route could not be found.');
   const route = routeSnapshot.data() as TrackKarRoute;
-  if (route.ownerAccountId !== uid) throw new Error('This route does not belong to your account.');
+  const memberships = route.ownerAccountId === uid ? [] : await listMyDriverMemberships();
+  if (route.ownerAccountId !== uid && !memberships.some(item => item.providerId === route.ownerAccountId)) {
+    throw new Error('You are not connected to the provider that owns this route.');
+  }
+  const providerId = route.ownerAccountId;
   if (route.status !== 'DRAFT' && route.status !== 'LEARNING') {
     throw new Error('Only a draft or learning route can accept learning trips.');
   }
@@ -82,7 +100,7 @@ export async function recordCompletedLearningTrip(
   const learningQuery = query(
     collection(db, 'routeLearningTrips'),
     where('routeId', '==', routeId),
-    where('ownerAccountId', '==', uid),
+    where('ownerAccountId', '==', providerId),
   );
   const learningSnapshot = await getDocs(learningQuery);
   const existing = learningSnapshot.docs
@@ -106,7 +124,7 @@ export async function recordCompletedLearningTrip(
     batch.set(versionRef, {
       id: versionRef.id,
       routeId,
-      ownerAccountId: uid,
+      ownerAccountId: providerId,
       version: 2,
       reason: 'LEARNING_FINALIZED',
       snapshot: {
@@ -131,7 +149,8 @@ export async function recordCompletedLearningTrip(
   batch.set(tripRef, {
     id: tripRef.id,
     routeId,
-    ownerAccountId: uid,
+    ownerAccountId: providerId,
+    recordedByAccountId: uid,
     sequence,
     points,
     distanceMeters: Math.round(routeDistanceMeters(points)),

@@ -12,7 +12,8 @@ export type TrackKarRole =
   | 'OPERATOR'
   | 'OPERATOR_DRIVER'
   | 'DRIVER'
-  | 'SUBSCRIBER';
+  | 'SUBSCRIBER'
+  | 'ADMIN';
 
 export type AccountStatus = 'ACTIVE' | 'SUSPENDED';
 
@@ -76,18 +77,15 @@ export async function createOrUpdateAccountProfile(input: {
     roles,
     primaryRole: existingData?.primaryRole || input.role,
     status: (existingData?.status as AccountStatus) || 'ACTIVE',
-    providerId:
-      typeof existingData?.providerId === 'string'
-        ? existingData.providerId
-        : null,
-    driverId:
-      typeof existingData?.driverId === 'string'
-        ? existingData.driverId
-        : null,
-    subscriberId:
-      typeof existingData?.subscriberId === 'string'
-        ? existingData.subscriberId
-        : null,
+    providerId: typeof existingData?.providerId === 'string'
+      ? existingData.providerId
+      : input.role === 'OPERATOR' || input.role === 'OPERATOR_DRIVER' ? input.uid : null,
+    driverId: typeof existingData?.driverId === 'string'
+      ? existingData.driverId
+      : input.role === 'DRIVER' || input.role === 'OPERATOR_DRIVER' ? input.uid : null,
+    subscriberId: typeof existingData?.subscriberId === 'string'
+      ? existingData.subscriberId
+      : input.role === 'SUBSCRIBER' ? input.uid : null,
     ...(existingData?.createdAt
       ? {createdAt: existingData.createdAt}
       : {createdAt: serverTimestamp()}),

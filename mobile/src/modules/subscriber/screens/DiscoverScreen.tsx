@@ -6,12 +6,11 @@ import {AppScreen} from '../../../components/AppScreen';
 import {BrandHeader} from '../../../components/BrandHeader';
 import {TextField} from '../../../components/TextField';
 import {colors, radius} from '../../../theme/tokens';
-import type {TrackKarRoute} from '../../route/routeTypes';
-import {discoverActiveRoutes, subscribeToRoute} from '../subscriberRepository';
+import {discoverActiveRoutes, subscribeToRoute, type DiscoveredRoute} from '../subscriberRepository';
 
 export function DiscoverScreen() {
   const [search, setSearch] = useState('');
-  const [routes, setRoutes] = useState<TrackKarRoute[]>([]);
+  const [routes, setRoutes] = useState<DiscoveredRoute[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const load = useCallback(() => {
@@ -25,7 +24,7 @@ export function DiscoverScreen() {
   }, [search]);
   useFocusEffect(load);
 
-  const subscribe = async (item: TrackKarRoute) => {
+  const subscribe = async (item: DiscoveredRoute) => {
     try {
       await subscribeToRoute(item.id);
       Alert.alert('Service tracked', `You will receive alerts for ${item.routeName}.`);
@@ -50,7 +49,8 @@ export function DiscoverScreen() {
     {routes.map(item => <Pressable key={item.id} onPress={() => subscribe(item)} style={styles.card}>
       <View style={styles.icon}><Route size={21} color={colors.primary} /></View>
       <View style={styles.grow}><Text style={styles.routeName}>{item.routeName}</Text>
-        <Text style={styles.muted}>{item.directionType} · Active</Text></View>
+        <Text style={styles.muted}>{item.providerName} · {item.serviceType}</Text>
+        <Text style={styles.muted}>{item.vehicleName} · {item.directionType}</Text></View>
       <Text style={styles.track}>Track</Text>
     </Pressable>)}
   </AppScreen>;

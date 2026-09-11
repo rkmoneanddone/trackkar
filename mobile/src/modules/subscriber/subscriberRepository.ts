@@ -11,6 +11,8 @@ import {
 } from '@react-native-firebase/firestore';
 import {firebaseApp, firebaseAuth} from '../auth/firebaseAuth';
 import type {TrackKarRoute} from '../route/routeTypes';
+import type {Provider} from '../provider/providerTypes';
+import type {Vehicle} from '../vehicle/vehicleTypes';
 import type {RouteSubscription, SubscriberLocation} from './subscriberTypes';
 
 const db = getFirestore(firebaseApp);
@@ -45,24 +47,36 @@ export async function saveCapturedLocation(
   });
 }
 
-export async function discoverActiveRoutes(searchText = '') {
+export type DiscoveredRoute = TrackKarRoute & {providerName: string; vehicleName: string; serviceType: string};
+
+export async function discoverActiveRoutes(searchText = ''): Promise<DiscoveredRoute[]> {
   currentUid();
   const snapshot = await getDocs(query(collection(db, 'routes'), where('status', '==', 'ACTIVE')));
   const search = searchText.trim().toLocaleLowerCase();
-  return snapshot.docs
-    .map(item => item.data() as TrackKarRoute)
-    .filter(item => !search || item.routeName.toLocaleLowerCase().includes(search))
+  const routes = snapshot.docs.map(item => item.data() as TrackKarRoute);
+  const enriched = await Promise.all(routes.map(async route => {
+    const [providerSnapshot, vehicleSnapshot] = await Promise.all([
+      getDoc(doc(db, 'providers', route.ownerAccountId)),
+      getDoc(doc(db, 'vehicles', route.vehicleId)),
+    ]);
+    const provider = providerSnapshot.exists() ? providerSnapshot.data() as Provider : null;
+    const vehicle = vehicleSnapshot.exists() ? vehicleSnapshot.data() as Vehicle : null;
+    return {...route, providerName: provider?.displayName || 'TrackKar provider',
+      vehicleName: vehicle?.displayName || 'Service vehicle', serviceType: vehicle?.vehicleType || 'Service'};
+  }));
+  return enriched
+    .filter(item => !search || `${item.routeName} ${item.providerName} ${item.serviceType}`.toLocaleLowerCase().includes(search))
     .sort((left, right) => left.routeName.localeCompare(right.routeName));
 }
 
-export async function getMyActiveSubscription() {
+export async function getMyActiveSubscriptions() {
   const uid = currentUid();
   const snapshot = await getDocs(query(
     collection(db, 'routeSubscriptions'),
     where('subscriberAccountId', '==', uid),
     where('status', 'in', ['ACTIVE', 'MUTED']),
   ));
-  return snapshot.empty ? null : snapshot.docs[0].data() as RouteSubscription;
+  return snapshot.docs.map(item => item.data() as RouteSubscription);
 }
 
 export async function subscribeToRoute(routeId: string) {
@@ -73,14 +87,6 @@ export async function subscribeToRoute(routeId: string) {
   }
   const location = await getSavedLocation();
   if (!location) throw new Error('Capture your service location before subscribing.');
-  const existing = await getMyActiveSubscription();
-  if (existing && existing.routeId !== routeId) {
-    await setDoc(doc(db, 'routeSubscriptions', existing.id), {
-      ...existing,
-      status: 'ENDED',
-      updatedAt: serverTimestamp(),
-    });
-  }
   const id = `${uid}_${routeId}`;
   await setDoc(doc(db, 'routeSubscriptions', id), {
     id,

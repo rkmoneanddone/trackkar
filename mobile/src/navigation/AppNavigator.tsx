@@ -11,6 +11,7 @@ import {MobileVerificationScreen} from '../modules/auth/screens/MobileVerificati
 import {OperatorNavigator} from './OperatorNavigator';
 import {DriverNavigator} from './DriverNavigator';
 import {SubscriberNavigator} from './SubscriberNavigator';
+import {AdminNavigator} from './AdminNavigator';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -35,6 +36,7 @@ export function AppNavigator() {
         <Stack.Screen name="OperatorApp" component={OperatorNavigator} />
         <Stack.Screen name="DriverApp" component={DriverNavigator} />
         <Stack.Screen name="SubscriberApp" component={SubscriberNavigator} />
+        <Stack.Screen name="AdminApp" component={AdminNavigator} />
       </Stack.Navigator>
     </NavigationContainer>
   );
