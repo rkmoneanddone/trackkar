@@ -1,6 +1,7 @@
 import {
   collection,
   doc,
+  getDoc,
   getDocs,
   getFirestore,
   query,
@@ -10,6 +11,10 @@ import {
 } from '@react-native-firebase/firestore';
 import {firebaseApp, firebaseAuth} from '../auth/firebaseAuth';
 import type {CreateVehicleInput, Vehicle} from './vehicleTypes';
+import {
+  validateRequiredText,
+  validateVehicleRegistration,
+} from './vehicleValidation';
 
 const db = getFirestore(firebaseApp);
 
@@ -26,19 +31,31 @@ function currentUid() {
 export async function createVehicle(input: CreateVehicleInput) {
   const uid = currentUid();
 
-  const cleanRegistration = input.registrationNumber
-    .trim()
-    .toUpperCase()
-    .replace(/\s+/g, ' ');
+  const registrationResult = validateVehicleRegistration(
+    input.registrationNumber,
+  );
+  if (!registrationResult.ok) {
+    throw new Error(registrationResult.message);
+  }
+
+  const cleanRegistration = registrationResult.normalizedRegistration;
 
   const cleanName = input.displayName.trim();
   const cleanType = input.vehicleType.trim();
   const cleanMakeModel = input.makeModel?.trim() || null;
 
-  if (!cleanName || !cleanRegistration || !cleanType) {
-    throw new Error(
-      'Vehicle name, registration number and vehicle type are required.',
-    );
+  const nameError = validateRequiredText(cleanName, 'Vehicle name', 40);
+  if (nameError) {
+    throw new Error(nameError);
+  }
+
+  const typeError = validateRequiredText(cleanType, 'Vehicle type', 30);
+  if (typeError) {
+    throw new Error(typeError);
+  }
+
+  if (cleanMakeModel && cleanMakeModel.length > 50) {
+    throw new Error('Make / model must be 50 characters or fewer.');
   }
 
   const vehicleRef = doc(collection(db, 'vehicles'));
@@ -93,5 +110,14 @@ export async function listMyVehicles(): Promise<Vehicle[]> {
 
   const snapshot = await getDocs(q);
 
-  return snapshot.docs.map(item => item.data() as Vehicle);
+  return snapshot.docs
+    .map(item => item.data() as Vehicle)
+    .sort((left, right) => left.displayName.localeCompare(right.displayName));
+}
+
+export async function getMyVehicle(vehicleId: string): Promise<Vehicle | null> {
+  currentUid();
+
+  const snapshot = await getDoc(doc(db, 'vehicles', vehicleId));
+  return snapshot.exists() ? (snapshot.data() as Vehicle) : null;
 }

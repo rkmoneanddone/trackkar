@@ -51,7 +51,7 @@ export function AccountScreen() {
             try {
               await signOut(firebaseAuth);
 
-              const root = navigation.getParent()?.getParent();
+              const root = navigation.getParent();
 
               root?.reset({
                 index: 0,

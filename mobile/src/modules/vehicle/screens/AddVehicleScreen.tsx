@@ -10,6 +10,7 @@ import {colors, radius} from '../../../theme/tokens';
 import {createVehicle} from '../vehicleRepository';
 import {
   formatVehicleRegistrationInput,
+  MAX_VEHICLE_REGISTRATION_LENGTH,
   validateRequiredText,
   validateVehicleRegistration,
 } from '../vehicleValidation';
@@ -25,6 +26,9 @@ export function AddVehicleScreen({navigation}: Props) {
   const [saving, setSaving] = useState(false);
 
   const save = async () => {
+    if (saving) {
+      return;
+    }
     const nameError = validateRequiredText(displayName, 'Vehicle name', 40);
     if (nameError) {
       Alert.alert('Check vehicle details', nameError);
@@ -103,7 +107,7 @@ export function AddVehicleScreen({navigation}: Props) {
           label="Registration number"
           placeholder="Example: JH01AB1234"
           value={registrationNumber}
-          maxLength={10}
+          maxLength={MAX_VEHICLE_REGISTRATION_LENGTH}
           autoCapitalize="characters"
           autoCorrect={false}
           onChangeText={value =>
@@ -113,7 +117,7 @@ export function AddVehicleScreen({navigation}: Props) {
         />
 
         <Text style={styles.helper}>
-          10 letters/numbers only. Spaces and symbols are removed automatically.
+          4–15 letters/numbers. Spaces and symbols are removed automatically.
         </Text>
 
         <TextField
@@ -144,9 +148,10 @@ export function AddVehicleScreen({navigation}: Props) {
       </View>
 
       <AppButton
-        label={saving ? 'Saving vehicleâ€¦' : 'Save vehicle'}
+        label={saving ? 'Saving vehicle…' : 'Save vehicle'}
         icon={<Save size={18} color={colors.white} />}
         onPress={save}
+        disabled={saving}
       />
     </AppScreen>
   );

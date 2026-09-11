@@ -16,16 +16,24 @@ type Props = NativeStackScreenProps<VehicleStackParamList, 'VehicleList'>;
 export function VehiclesScreen({navigation}: Props) {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useFocusEffect(
     useCallback(() => {
       let active = true;
       setLoading(true);
+      setError(null);
 
       listMyVehicles()
         .then(items => {
           if (active) {
             setVehicles(items);
+          }
+        })
+        .catch(cause => {
+          if (active) {
+            setVehicles([]);
+            setError(cause instanceof Error ? cause.message : String(cause));
           }
         })
         .finally(() => {
@@ -63,7 +71,12 @@ export function VehiclesScreen({navigation}: Props) {
 
       {loading ? (
         <View style={styles.loadingCard}>
-          <Text style={styles.loadingText}>Loading vehiclesâ€¦</Text>
+          <Text style={styles.loadingText}>Loading vehicles…</Text>
+        </View>
+      ) : error ? (
+        <View style={styles.loadingCard}>
+          <Text style={styles.errorTitle}>Could not load vehicles</Text>
+          <Text style={styles.loadingText}>{error}</Text>
         </View>
       ) : vehicles.length === 0 ? (
         <View style={styles.empty}>
@@ -102,7 +115,7 @@ export function VehiclesScreen({navigation}: Props) {
               <View style={styles.vehicleBody}>
                 <Text style={styles.vehicleName}>{vehicle.displayName}</Text>
                 <Text style={styles.vehicleMeta}>
-                  {vehicle.registrationNumber} Â· {vehicle.vehicleType}
+                  {vehicle.registrationNumber} · {vehicle.vehicleType}
                 </Text>
               </View>
 
@@ -136,6 +149,7 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   loadingText: {fontSize: 13.5, color: colors.muted},
+  errorTitle: {fontSize: 15, fontWeight: '900', color: colors.text, marginBottom: 6},
   empty: {
     backgroundColor: colors.surface,
     borderWidth: 1,

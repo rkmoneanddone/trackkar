@@ -1,5 +1,5 @@
 import React, {PropsWithChildren} from 'react';
-import {SafeAreaView, ScrollView, StyleSheet, View} from 'react-native';
+import {SafeAreaView, ScrollView, StyleSheet} from 'react-native';
 import {colors} from '../theme/tokens';
 
 export function AppScreen({children}: PropsWithChildren) {

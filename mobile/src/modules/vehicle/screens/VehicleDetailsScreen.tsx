@@ -6,7 +6,7 @@ import {BusFront, CircleCheck, Hash, Tag} from 'lucide-react-native';
 import {AppScreen} from '../../../components/AppScreen';
 import {AppHeader} from '../../../components/AppHeader';
 import {colors, radius} from '../../../theme/tokens';
-import {listMyVehicles} from '../vehicleRepository';
+import {getMyVehicle} from '../vehicleRepository';
 import type {Vehicle} from '../vehicleTypes';
 import type {VehicleStackParamList} from '../../../navigation/VehicleStackNavigator';
 
@@ -14,20 +14,33 @@ type Props = NativeStackScreenProps<VehicleStackParamList, 'VehicleDetails'>;
 
 export function VehicleDetailsScreen({navigation, route}: Props) {
   const [vehicle, setVehicle] = useState<Vehicle | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useFocusEffect(
     useCallback(() => {
       let active = true;
+      setLoading(true);
+      setError(null);
 
-      listMyVehicles()
-        .then(items => {
+      getMyVehicle(route.params.vehicleId)
+        .then(item => {
           if (active) {
-            setVehicle(items.find(item => item.id === route.params.vehicleId) || null);
+            setVehicle(item);
+            if (!item) {
+              setError('This vehicle could not be found.');
+            }
           }
         })
-        .catch(() => {
+        .catch(cause => {
           if (active) {
             setVehicle(null);
+            setError(cause instanceof Error ? cause.message : String(cause));
+          }
+        })
+        .finally(() => {
+          if (active) {
+            setLoading(false);
           }
         });
 
@@ -41,9 +54,14 @@ export function VehicleDetailsScreen({navigation, route}: Props) {
     <AppScreen>
       <AppHeader title="Vehicle details" onBack={() => navigation.goBack()} />
 
-      {!vehicle ? (
+      {loading ? (
         <View style={styles.card}>
-          <Text style={styles.title}>Loading vehicleâ€¦</Text>
+          <Text style={styles.title}>Loading vehicle…</Text>
+        </View>
+      ) : error || !vehicle ? (
+        <View style={styles.card}>
+          <Text style={styles.title}>Vehicle unavailable</Text>
+          <Text style={styles.errorText}>{error}</Text>
         </View>
       ) : (
         <>
@@ -148,4 +166,5 @@ const styles = StyleSheet.create({
   },
   nextTitle: {fontSize: 12.5, fontWeight: '900', color: colors.text},
   nextText: {fontSize: 12.5, lineHeight: 18, color: colors.textSoft},
+  errorText: {fontSize: 13.5, lineHeight: 20, color: colors.muted, marginTop: 6},
 });

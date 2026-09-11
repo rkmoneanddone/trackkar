@@ -6,19 +6,31 @@ import {colors, radius} from '../theme/tokens';
 type Props = {
   label: string;
   onPress: () => void;
+  disabled?: boolean;
   secondary?: boolean;
   icon?: React.ReactNode;
   arrow?: boolean;
 };
 
-export function AppButton({label, onPress, secondary, icon, arrow}: Props) {
+export function AppButton({
+  label,
+  onPress,
+  disabled = false,
+  secondary,
+  icon,
+  arrow,
+}: Props) {
   return (
     <Pressable
       onPress={onPress}
+      disabled={disabled}
+      accessibilityRole="button"
+      accessibilityState={{disabled}}
       style={({pressed}) => [
         styles.base,
         secondary ? styles.secondary : styles.primary,
-        pressed && {opacity: 0.86},
+        disabled && styles.disabled,
+        pressed && !disabled && {opacity: 0.86},
       ]}>
       <View style={styles.left}>
         {icon}
@@ -40,4 +52,5 @@ const styles = StyleSheet.create({
   label: {fontSize: 15.5, fontWeight: '800'},
   lightText: {color: colors.white},
   darkText: {color: colors.text},
+  disabled: {opacity: 0.55},
 });

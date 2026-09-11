@@ -2,11 +2,14 @@ export type VehicleValidationResult =
   | {ok: true; normalizedRegistration: string}
   | {ok: false; message: string};
 
+export const MIN_VEHICLE_REGISTRATION_LENGTH = 4;
+export const MAX_VEHICLE_REGISTRATION_LENGTH = 15;
+
 export function normalizeVehicleRegistration(value: string) {
   return value
     .toUpperCase()
     .replace(/[^A-Z0-9]/g, '')
-    .slice(0, 10);
+    .slice(0, MAX_VEHICLE_REGISTRATION_LENGTH);
 }
 
 export function formatVehicleRegistrationInput(value: string) {
@@ -18,14 +21,17 @@ export function validateVehicleRegistration(
 ): VehicleValidationResult {
   const normalizedRegistration = normalizeVehicleRegistration(value);
 
-  if (normalizedRegistration.length !== 10) {
+  if (
+    normalizedRegistration.length < MIN_VEHICLE_REGISTRATION_LENGTH ||
+    normalizedRegistration.length > MAX_VEHICLE_REGISTRATION_LENGTH
+  ) {
     return {
       ok: false,
-      message: 'Registration number must contain exactly 10 letters/numbers.',
+      message: `Registration number must contain ${MIN_VEHICLE_REGISTRATION_LENGTH}–${MAX_VEHICLE_REGISTRATION_LENGTH} letters/numbers.`,
     };
   }
 
-  if (!/^[A-Z0-9]{10}$/.test(normalizedRegistration)) {
+  if (!/^[A-Z0-9]+$/.test(normalizedRegistration)) {
     return {
       ok: false,
       message: 'Use only letters and numbers in the registration number.',

@@ -17,10 +17,12 @@ import {listMyVehicles} from '../../vehicle/vehicleRepository';
 export function OperatorHomeScreen() {
   const navigation = useNavigation<any>();
   const [vehicleCount, setVehicleCount] = useState(0);
+  const [vehicleLoadError, setVehicleLoadError] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
       let active = true;
+      setVehicleLoadError(false);
 
       listMyVehicles()
         .then(items => {
@@ -30,7 +32,7 @@ export function OperatorHomeScreen() {
         })
         .catch(() => {
           if (active) {
-            setVehicleCount(0);
+            setVehicleLoadError(true);
           }
         });
 
@@ -60,7 +62,7 @@ export function OperatorHomeScreen() {
       <View style={styles.stats}>
         <Stat
           icon={<BusFront size={20} color={colors.primary} />}
-          value={String(vehicleCount)}
+          value={vehicleLoadError ? '—' : String(vehicleCount)}
           label="Vehicles"
         />
         <Stat
