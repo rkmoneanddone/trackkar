@@ -9,7 +9,8 @@ test('estimates minutes using speed', () => {
 });
 
 test('sends each threshold at most once', () => {
-  assert.equal(nextStage(7, 5.5, {alert6MinSent: false, alert3MinSent: false}), 'SIX_MINUTE');
-  assert.equal(nextStage(4, 2.5, {alert6MinSent: true, alert3MinSent: false}), 'THREE_MINUTE');
-  assert.equal(nextStage(2.8, 2.5, {alert6MinSent: true, alert3MinSent: true}), null);
+  const stages = [{id: 'EARLY', minutes: 8}, {id: 'NEAR', minutes: 2}];
+  assert.equal(nextStage(9, 7.5, [], stages).id, 'EARLY');
+  assert.equal(nextStage(3, 1.5, ['EARLY'], stages).id, 'NEAR');
+  assert.equal(nextStage(1.8, 1.5, ['EARLY', 'NEAR'], stages), null);
 });

@@ -16,13 +16,14 @@ function estimateMinutes(vehiclePoint, subscriberPoint, speed) {
   return distanceMeters(vehiclePoint, subscriberPoint) / speed / 60;
 }
 
-function nextStage(previousMinutes, currentMinutes, state) {
+function nextStage(previousMinutes, currentMinutes, sentStageIds, stages) {
   if (currentMinutes === null || currentMinutes < 0) return null;
   const crossed = threshold => currentMinutes <= threshold
     && (previousMinutes === null || previousMinutes > threshold);
-  if (!state.alert6MinSent && crossed(6)) return 'SIX_MINUTE';
-  if (!state.alert3MinSent && crossed(3)) return 'THREE_MINUTE';
-  return null;
+  return [...stages]
+    .filter(stage => stage.enabled !== false)
+    .sort((left, right) => right.minutes - left.minutes)
+    .find(stage => !sentStageIds.includes(stage.id) && crossed(stage.minutes)) || null;
 }
 
 module.exports = {distanceMeters, estimateMinutes, nextStage};

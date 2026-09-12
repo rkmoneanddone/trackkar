@@ -12,7 +12,7 @@ export type RouteSubscription = {
   subscriberAccountId: string;
   routeId: string;
   status: 'ACTIVE' | 'MUTED' | 'ENDED';
-  alertMinutes: [6, 3];
+  alertMinutes?: number[];
   voiceEnabled: boolean;
   createdAt?: unknown;
   updatedAt?: unknown;

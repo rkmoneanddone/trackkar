@@ -277,7 +277,6 @@ service cloud.firestore {
         && request.resource.data.id == subscriptionId
         && request.resource.data.subscriberAccountId == request.auth.uid
         && request.resource.data.status == 'ACTIVE'
-        && request.resource.data.alertMinutes == [6, 3]
         && exists(/databases/$(database)/documents/subscriberLocations/$(request.auth.uid))
         && exists(/databases/$(database)/documents/routes/$(request.resource.data.routeId))
         && get(/databases/$(database)/documents/routes/$(request.resource.data.routeId)).data.status == 'ACTIVE';
@@ -305,6 +304,11 @@ service cloud.firestore {
     match /subscriptionAlertStates/{stateId} {
       allow read: if signedIn()
         && resource.data.subscriberAccountId == request.auth.uid;
+      allow write: if false;
+    }
+
+    match /appConfig/{configId} {
+      allow read: if signedIn();
       allow write: if false;
     }
 

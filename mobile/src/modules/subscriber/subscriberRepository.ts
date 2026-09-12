@@ -94,7 +94,6 @@ export async function subscribeToRoute(routeId: string) {
     subscriberAccountId: uid,
     routeId,
     status: 'ACTIVE',
-    alertMinutes: [6, 3],
     voiceEnabled: true,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
