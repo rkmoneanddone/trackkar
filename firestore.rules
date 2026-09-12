@@ -289,6 +289,25 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    match /deviceTokens/{tokenId} {
+      allow read: if signedIn() && resource.data.accountId == request.auth.uid;
+      allow create: if signedIn()
+        && request.resource.data.accountId == request.auth.uid
+        && request.resource.data.fcmToken is string
+        && request.resource.data.platform in ['android', 'ios']
+        && request.resource.data.enabled == true;
+      allow update: if signedIn()
+        && resource.data.accountId == request.auth.uid
+        && request.resource.data.accountId == request.auth.uid;
+      allow delete: if false;
+    }
+
+    match /subscriptionAlertStates/{stateId} {
+      allow read: if signedIn()
+        && resource.data.subscriberAccountId == request.auth.uid;
+      allow write: if false;
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }
