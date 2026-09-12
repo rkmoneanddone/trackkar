@@ -12,6 +12,7 @@ import {
 } from '@react-native-firebase/firestore';
 import {firebaseApp, firebaseAuth} from '../auth/firebaseAuth';
 import type {TrackKarRoute} from '../route/routeTypes';
+import {projectPointOntoRoute} from '../route/routeProgress';
 import type {Provider} from '../provider/providerTypes';
 import type {Vehicle} from '../vehicle/vehicleTypes';
 import type {RouteSubscription, SubscriberLocation} from './subscriberTypes';
@@ -88,11 +89,20 @@ export async function subscribeToRoute(routeId: string) {
   }
   const location = await getSavedLocation();
   if (!location) throw new Error('Capture your service location before subscribing.');
+  const route = routeSnapshot.data() as TrackKarRoute;
+  if (!route.learnedPath?.length) throw new Error('This service route has no learned path.');
+  const projection = projectPointOntoRoute(location.point, route.learnedPath);
+  if (projection.distanceFromPathMeters > 1500) {
+    throw new Error('Your saved location is too far from this service route.');
+  }
   const id = `${uid}_${routeId}`;
   await setDoc(doc(db, 'routeSubscriptions', id), {
     id,
     subscriberAccountId: uid,
     routeId,
+    subscriberPoint: location.point,
+    routeProgressMeters: Math.round(projection.progressMeters),
+    routeDistanceFromPathMeters: Math.round(projection.distanceFromPathMeters),
     status: 'ACTIVE',
     voiceEnabled: true,
     createdAt: serverTimestamp(),

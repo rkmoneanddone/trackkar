@@ -1,0 +1,14 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "routeSubscriptions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {"fieldPath": "routeId", "order": "ASCENDING"},
+        {"fieldPath": "status", "order": "ASCENDING"},
+        {"fieldPath": "routeProgressMeters", "order": "ASCENDING"}
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

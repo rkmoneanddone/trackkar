@@ -11,6 +11,9 @@ export type RouteSubscription = {
   id: string;
   subscriberAccountId: string;
   routeId: string;
+  subscriberPoint: RoutePoint;
+  routeProgressMeters: number;
+  routeDistanceFromPathMeters: number;
   status: 'ACTIVE' | 'MUTED' | 'ENDED';
   alertMinutes?: number[];
   voiceEnabled: boolean;

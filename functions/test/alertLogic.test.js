@@ -1,11 +1,18 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const {estimateMinutes, nextStage} = require('../alertLogic');
+const {estimateMinutes, nextStage, projectPointOntoRoute} = require('../alertLogic');
 
 test('estimates minutes using speed', () => {
   const minutes = estimateMinutes({latitude: 0, longitude: 0},
     {latitude: 0, longitude: 0.01}, 10);
   assert.ok(minutes > 1.8 && minutes < 1.9);
+});
+
+test('projects subscribers into an ahead-of-vehicle range', () => {
+  const result = projectPointOntoRoute({latitude: 0, longitude: 0.005},
+    [{latitude: 0, longitude: 0}, {latitude: 0, longitude: 0.01}]);
+  assert.ok(result.progressMeters > 550 && result.progressMeters < 565);
+  assert.ok(result.distanceFromPathMeters < 1);
 });
 
 test('sends each threshold at most once', () => {

@@ -278,6 +278,12 @@ service cloud.firestore {
         && request.resource.data.subscriberAccountId == request.auth.uid
         && request.resource.data.status == 'ACTIVE'
         && exists(/databases/$(database)/documents/subscriberLocations/$(request.auth.uid))
+        && request.resource.data.subscriberPoint == get(/databases/$(database)/documents/subscriberLocations/$(request.auth.uid)).data.point
+        && request.resource.data.routeProgressMeters is number
+        && request.resource.data.routeProgressMeters >= 0
+        && request.resource.data.routeDistanceFromPathMeters is number
+        && request.resource.data.routeDistanceFromPathMeters >= 0
+        && request.resource.data.routeDistanceFromPathMeters <= 1500
         && exists(/databases/$(database)/documents/routes/$(request.resource.data.routeId))
         && get(/databases/$(database)/documents/routes/$(request.resource.data.routeId)).data.status == 'ACTIVE';
       allow update: if signedIn()
