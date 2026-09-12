@@ -12,8 +12,7 @@ export type TrackKarRole =
   | 'OPERATOR'
   | 'OPERATOR_DRIVER'
   | 'DRIVER'
-  | 'SUBSCRIBER'
-  | 'ADMIN';
+  | 'SUBSCRIBER';
 
 export type AccountStatus = 'ACTIVE' | 'SUSPENDED';
 

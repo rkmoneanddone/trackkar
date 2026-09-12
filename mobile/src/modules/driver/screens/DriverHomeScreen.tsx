@@ -23,7 +23,8 @@ export function DriverHomeScreen() {
     const timer = setInterval(() => { update().catch(() => undefined); }, 60_000);
     return () => clearInterval(timer);
   }, [run]);
-  const finish = async () => { if (!run) return; try { await completeRouteRun(run.id); setRun(null); }
+  const finish = async () => { if (!run) return; try { const endpoint = await captureDeviceLocation();
+      await completeRouteRun(run.id, endpoint); setRun(null); }
     catch (cause) { Alert.alert('Could not finish route', cause instanceof Error ? cause.message : String(cause)); } };
   return <AppScreen><BrandHeader compact /><Text style={styles.title}>Driver</Text>
     <Text style={styles.subtitle}>Select the route actually being serviced today.</Text>

@@ -7,6 +7,7 @@ import {
   query,
   serverTimestamp,
   setDoc,
+  updateDoc,
   where,
 } from '@react-native-firebase/firestore';
 import {firebaseApp, firebaseAuth} from '../auth/firebaseAuth';
@@ -99,4 +100,19 @@ export async function subscribeToRoute(routeId: string) {
     updatedAt: serverTimestamp(),
   }, {merge: true});
   return id;
+}
+
+export async function setSubscriptionStatus(
+  subscriptionId: string,
+  status: RouteSubscription['status'],
+) {
+  const uid = currentUid();
+  const ref = doc(db, 'routeSubscriptions', subscriptionId);
+  const snapshot = await getDoc(ref);
+  if (!snapshot.exists()) throw new Error('This tracked service was not found.');
+  const subscription = snapshot.data() as RouteSubscription;
+  if (subscription.subscriberAccountId !== uid) {
+    throw new Error('You cannot change another subscriber’s service.');
+  }
+  await updateDoc(ref, {status, updatedAt: serverTimestamp()});
 }

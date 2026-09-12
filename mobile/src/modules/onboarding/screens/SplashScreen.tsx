@@ -15,11 +15,9 @@ export function SplashScreen({navigation}: Props) {
   useEffect(() => onAuthStateChanged(firebaseAuth, async user => {
     if (!user) { navigation.replace('Welcome'); return; }
     try {
-      const [profile, token] = await Promise.all([getAccountProfile(user.uid), user.getIdTokenResult()]);
+      const profile = await getAccountProfile(user.uid);
       if (!profile) { navigation.replace('Welcome'); return; }
-      if (token.claims.admin === true || profile.primaryRole === 'ADMIN') {
-        navigation.replace('AdminApp');
-      } else if (profile.primaryRole === 'OPERATOR' || profile.primaryRole === 'OPERATOR_DRIVER') {
+      if (profile.primaryRole === 'OPERATOR' || profile.primaryRole === 'OPERATOR_DRIVER') {
         await ensureProvider(profile);
         navigation.replace('OperatorApp');
       } else if (profile.primaryRole === 'DRIVER') {

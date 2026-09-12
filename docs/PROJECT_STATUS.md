@@ -1,200 +1,80 @@
-# Garbage Collection Alert System
-## Project Status
+# TrackKar Project Status
 
-**Project Path:** `E:\codex\GarbageCollection\`
+**Repository:** `rkmoneanddone/trackkar`
 
-**Documentation Path:** `E:\codex\GarbageCollection\docs\`  
-**Current Phase:** Environment / Development Setup  
-**MVP Status:** Not yet implemented
+**Development branch:** `wip/vehicle-foundation`
 
----
+**Backend:** Firebase project `trackkar-b89dd`
 
-# 1. Product Status
+**Mobile:** React Native CLI + TypeScript, Android first
 
-The product definition is substantially locked.
+**Admin:** Web-only (not part of the mobile application)
 
-## Locked
+## Current outcome
 
-- Dynamic daily route selection
-- One user → one route for MVP
-- Driver authentication required
-- Driver logs in once
-- Driver session remembered
-- Resident traditional login is NOT mandatory for MVP
-- Google Maps/map-based route start
-- Google Maps/map-based route end
-- Driver cannot manually enter route start/end locations
-- Driver GPS validation at start
-- Driver GPS validation at end
-- Driver explicitly confirms START after GPS validation
-- Driver explicitly confirms END after GPS validation
-- Explicit START confirmation
-- Explicit END confirmation
-- Approximately one-minute GPS updates
-- Automatic 10:00 AM shutdown
-- One alert per subscriber per DailyRun
-- Optional voice alert
-- Optional agency mapping
-- Optional contact information
-- Route pricing
-- Payment integration deferred
+TrackKar is a general vehicle/service proximity platform. It is not limited to
+school transport or garbage collection. Operators publish services and routes,
+drivers run those routes, and subscribers track one or more services.
 
----
+## Implemented foundation
 
-# 2. Technology Status
+- Google and phone authentication with persisted sessions
+- Role flows for operator, operator-driver, driver and subscriber
+- Provider creation and one-time driver invite linkage
+- Vehicle creation with registration validation and immutable history baseline
+- Route creation, outbound/return identity and five-route limit
+- Three-completed-trip route learning and learned start/end points
+- Driver route listing, run start/end and periodic foreground GPS capture
+- Start/end proximity validation for active learned routes
+- Subscriber fixed-location capture without continuous subscriber tracking
+- Active route discovery and multiple subscriptions
+- Per-subscription mute, resume and stop-tracking controls
+- Six-minute/three-minute proximity alert calculation engine
+- Firestore access rules for the implemented mobile collections
+- Account display and logout for all mobile roles
+- Android native location bridge
 
-Target:
+## Deliberately excluded from mobile
 
-```text
-Mobile:
-React Native + TypeScript
+- Admin login and dashboard. Administration will be a separate secured web app.
+- Payments. Data structures must remain payment-ready, but checkout is deferred.
 
-Admin:
-React + Vite
+## Remaining before end-to-end MVP acceptance
 
-Backend:
-Firebase
+1. Add Firebase Cloud Functions for server-authoritative run processing.
+2. Add FCM device-token registration and background push delivery.
+3. Persist one alert state per subscription per run and enforce at-most-once sends.
+4. Add Android notification channels, sound/voice preferences and permission flow.
+5. Make driver tracking resilient when the app is backgrounded.
+6. Add route-run recovery, automatic timeout and operational error states.
+7. Complete provider pricing/public-service details and subscriber presentation.
+8. Build the separate web-admin project with custom-claim authorization.
+9. Add emulator-backed Firestore rules tests and real-device acceptance testing.
 
-Database:
-Firestore
-
-Authentication:
-Firebase Authentication
-
-Notifications:
-FCM
-
-Server-side processing:
-Cloud Functions
-
-Maps:
-Google Maps
-
-GPS:
-Device GPS
-
-Voice:
-Native Android TTS
-```
-
----
-
-# 3. Current Development Phase
-
-Before implementation, Codex must inspect:
-
-- repository contents
-- documentation in `docs\`
-- Git status
-- Node.js
-- npm
-- React Native/Expo tooling as applicable
-- Android SDK
-- Java/JDK
-- Firebase CLI
-- Firebase project configuration
-- Google Maps configuration
-- available emulators/devices
-
-Do not change architecture during inspection.
-
----
-
-# 4. Immediate Goal
-
-Prepare the development environment.
-
-The first implementation milestone should be the development-environment and authentication foundation:
+## Required acceptance flow
 
 ```text
-Project starts
-      ↓
-Driver can authenticate once
-      ↓
-Driver session persists
-      ↓
-Driver sees assigned routes
+Operator creates vehicle and route
+  -> driver connects and completes three learning runs
+  -> route becomes discoverable
+  -> subscriber saves a location and subscribes
+  -> driver starts the learned route near its start
+  -> backend processes location updates
+  -> subscriber receives the 6-minute and 3-minute alerts once per run
+  -> driver ends the route near its endpoint
 ```
 
-Then move to:
+## Validation checkpoint
 
-```text
-Route map
-      ↓
-GPS START validation
-      ↓
-DailyRun
-      ↓
-GPS tracking
-      ↓
-Subscriber location
-      ↓
-Alert
-      ↓
-GPS END validation
+The previous checkpoint passed TypeScript, Jest and ESLint with warnings only.
+After every new checkpoint run:
+
+```powershell
+cd F:\codex\GarbageCollection\mobile
+.\node_modules\.bin\tsc.cmd --noEmit
+npm test -- --runInBand
+npm run lint
 ```
 
----
-
-# 5. Important Constraint
-
-Do not implement Version 2.
-
-Do not implement payments yet.
-
-Do not add unnecessary infrastructure.
-
-Do not introduce a new technology without approval.
-
----
-
-# 6. Definition of MVP Completion
-
-MVP is complete only when the complete real-world flow works:
-
-```text
-Admin configures route
-       ↓
-Driver logs in once
-       ↓
-Driver selects route
-       ↓
-Driver reaches GPS START
-       ↓
-START ROUTE
-       ↓
-GPS tracking
-       ↓
-Subscriber ETA threshold
-       ↓
-One push alert
-       ↓
-Driver reaches GPS END
-       ↓
-END ROUTE
-       ↓
-GPS stops
-```
-
----
-
-# 7. Current Next Action
-
-Codex should first inspect the existing repository and environment.
-
-It should NOT immediately create a large application.
-
-It should report:
-
-- what already exists
-- what is installed
-- what is missing
-- what credentials/configuration are required
-- whether any credentials are sensitive and where they should be configured
-- recommended next step
-
-Then wait for approval before major changes.
-
----
-
-**End of Project Status**
+Native Android rebuilds are required only after Kotlin, Android manifest, Gradle
+or native dependency changes. TypeScript/UI changes should use Metro Fast Refresh.

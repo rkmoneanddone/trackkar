@@ -39,23 +39,28 @@ export async function updateRouteRunLocation(runId: string, point: RoutePoint, s
     latestSpeedMetersPerSecond: speed, learningPoints: arrayUnion(point), updatedAt: serverTimestamp()});
 }
 
-export async function completeRouteRun(runId: string) {
+export async function completeRouteRun(runId: string, endpoint?: RoutePoint) {
   currentUid();
   const runSnapshot = await getDoc(doc(db, 'routeRuns', runId));
   if (!runSnapshot.exists()) throw new Error('Active route run was not found.');
   const run = runSnapshot.data() as RouteRun & {learningPoints?: RoutePoint[]};
+  const latestPoint = endpoint || run.latestPoint;
+  const learningPoints = endpoint
+    ? [...(run.learningPoints || []), endpoint]
+    : (run.learningPoints || []);
   const routeSnapshot = await getDoc(doc(db, 'routes', run.routeId));
   const route = routeSnapshot.exists() ? routeSnapshot.data() as TrackKarRoute : null;
   if (route?.status === 'ACTIVE' && route.endPoint
-    && distanceMeters(run.latestPoint, route.endPoint) > START_END_RADIUS_METERS) {
+    && distanceMeters(latestPoint, route.endPoint) > START_END_RADIUS_METERS) {
     throw new Error(`Move within ${START_END_RADIUS_METERS} metres of the learned route end.`);
   }
   let learningError: string | null = null;
   if (route && (route.status === 'DRAFT' || route.status === 'LEARNING')) {
-    try { await recordCompletedLearningTrip(run.routeId, run.learningPoints || []); }
+    try { await recordCompletedLearningTrip(run.routeId, learningPoints); }
     catch (cause) { learningError = cause instanceof Error ? cause.message : String(cause); }
   }
-  await updateDoc(doc(db, 'routeRuns', runId), {status: 'COMPLETED', endedAt: serverTimestamp(), updatedAt: serverTimestamp()});
+  await updateDoc(doc(db, 'routeRuns', runId), {status: 'COMPLETED', latestPoint,
+    learningPoints, endedAt: serverTimestamp(), updatedAt: serverTimestamp()});
   if (learningError) throw new Error(`Route ended, but this trip was not used for learning: ${learningError}`);
 }
 
