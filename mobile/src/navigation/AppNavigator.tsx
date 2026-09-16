@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useEffect} from 'react';
 import {NavigationContainer} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import type {RootStackParamList} from './types';
@@ -8,6 +8,7 @@ import {RegisterAsScreen} from '../modules/onboarding/screens/RegisterAsScreen';
 import {OperatorModeScreen} from '../modules/onboarding/screens/OperatorModeScreen';
 import {RegisterScreen} from '../modules/auth/screens/RegisterScreen';
 import {MobileVerificationScreen} from '../modules/auth/screens/MobileVerificationScreen';
+import {startPushRegistration} from '../modules/notifications/notificationRepository';
 import {OperatorNavigator} from './OperatorNavigator';
 import {DriverNavigator} from './DriverNavigator';
 import {SubscriberNavigator} from './SubscriberNavigator';
@@ -15,6 +16,8 @@ import {SubscriberNavigator} from './SubscriberNavigator';
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export function AppNavigator() {
+  useEffect(() => startPushRegistration(), []);
+
   return (
     <NavigationContainer>
       <Stack.Navigator
